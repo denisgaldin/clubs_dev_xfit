@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
-        BASE_URL = credentials('xfit_base_url')  //
+        BASE_URL = credentials('xfit_base_url')
     }
 
     tools {
-        allure 'Allure'  //
+        allurecommandline 'allurecommandline'  // <-- имя из Jenkins Global Tool Configuration
     }
 
     stages {
