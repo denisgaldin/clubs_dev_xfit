@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        BASE_URL = credentials('xfit_base_url') //
+        BASE_URL = credentials('xfit_base_url')
     }
 
     stages {
@@ -10,8 +10,8 @@ pipeline {
             steps {
                 echo '🔄 Получаем код из репозитория'
                 checkout scm
-                sh 'pwd'          // Покажем текущую директорию
-                sh 'ls -la'       // Покажем содержимое директории
+                sh 'pwd'
+                sh 'ls -la'
             }
         }
 
@@ -20,14 +20,10 @@ pipeline {
                 echo '🐍 Установка зависимостей и запуск тестов'
                 sh '''
                     python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-
-                    # Экспортируем BASE_URL для dotenv
+                    .venv/bin/pip install --upgrade pip
+                    .venv/bin/pip install -r requirements.txt
                     echo "BASE_URL=$BASE_URL" > .env
-
-                    pytest tests/ --alluredir=allure-results --maxfail=1 --disable-warnings -v
+                    .venv/bin/pytest tests/ --alluredir=allure-results --maxfail=1 --disable-warnings -v
                 '''
             }
         }
