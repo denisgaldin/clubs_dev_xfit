@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        BASE_URL = credentials('xfit_base_url')  //
+        BASE_URL = credentials('xfit_base_url') //
     }
 
     stages {
@@ -10,6 +10,8 @@ pipeline {
             steps {
                 echo '🔄 Получаем код из репозитория'
                 checkout scm
+                sh 'pwd'          // Покажем текущую директорию
+                sh 'ls -la'       // Покажем содержимое директории
             }
         }
 
@@ -33,7 +35,6 @@ pipeline {
         stage('Allure Report') {
             steps {
                 echo '📊 Генерация Allure отчета'
-                //
                 allure([
                     includeProperties: false,
                     jdk: '',
@@ -49,9 +50,11 @@ pipeline {
             echo '🧹 Очистка окружения'
             sh 'rm -rf .venv'
         }
+
         success {
             echo '✅ Все тесты прошли успешно!'
         }
+
         failure {
             echo '❌ Ошибка: Проверь отчёт и логи'
         }
