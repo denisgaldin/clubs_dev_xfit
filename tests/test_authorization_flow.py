@@ -1,7 +1,12 @@
-import requests
 import os
+import pytest
+import requests
+import json
+from dotenv import load_dotenv
 
-BASE_URL = os.getenv("BASE_URL", "https://dev-mobile.xfit.ru")
+load_dotenv()
+
+BASE_URL = os.getenv("BASE_URL")
 
 HEADERS_BASIC_AUTH = {
     "Content-Type": "application/json",

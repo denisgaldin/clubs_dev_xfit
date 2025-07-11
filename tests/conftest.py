@@ -1,9 +1,12 @@
+import os
 import pytest
 import requests
-import os
 import json
+from dotenv import load_dotenv
 
-BASE_URL = os.getenv("BASE_URL", "https://dev-mobile.xfit.ru")
+load_dotenv()
+
+BASE_URL = os.getenv("BASE_URL")
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -42,7 +45,6 @@ def sms_token():
         token = response.json().get("result", {}).get("token")
         if token:
             print("✅ SMS Token:", token)
-            # Сохраняем токен в файл (можно убрать, если не нужен кеш)
             with open(SMS_TOKEN_FILE, "w") as f:
                 json.dump({"token": token}, f)
             return token
@@ -56,7 +58,7 @@ def sms_token():
 def access_token(sms_token):
     payload = {
         "token": sms_token,
-        "verificationCode": "1234"  # фиксированный код из Postman
+        "verificationCode": "1234"
     }
 
     response = requests.post(
