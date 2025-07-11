@@ -2,53 +2,58 @@ pipeline {
     agent any
 
     environment {
-        BASE_URL = credentials('xfit_base_url')
-    }
-
-    tools {
-        allurecommandline 'allurecommandline'  // <-- имя из Jenkins Global Tool Configuration
+        BASE_URL = credentials('xfit_base_url')  //
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo '🔄 Клонируем репозиторий'
+                echo '🔄 Получаем код из репозитория'
                 checkout scm
             }
         }
 
-        stage('Install dependencies') {
+        stage('Install & Run') {
             steps {
-                echo '📦 Установка зависимостей'
-                sh 'pip install -r requirements.txt'
-            }
-        }
-
-        stage('Run tests') {
-            steps {
-                echo '🚀 Запуск pytest с Allure'
+                echo '🐍 Установка зависимостей и запуск тестов'
                 sh '''
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+
+                    # Экспортируем BASE_URL для dotenv
                     echo "BASE_URL=$BASE_URL" > .env
-                    pytest tests/ --alluredir=allure-results --tb=short -v
+
+                    pytest tests/ --alluredir=allure-results --maxfail=1 --disable-warnings -v
                 '''
             }
         }
 
-        stage('Generate Allure Report') {
+        stage('Allure Report') {
             steps {
-                allure includeProperties: false,
-                       jdk: '',
-                       results: [[path: 'allure-results']]
+                echo '📊 Генерация Allure отчета'
+                //
+                allure([
+                    includeProperties: false,
+                    jdk: '',
+                    reportBuildPolicy: 'ALWAYS',
+                    results: [[path: 'allure-results']]
+                ])
             }
         }
     }
 
     post {
-        failure {
-            echo '❌ Тесты упали'
+        always {
+            echo '🧹 Очистка окружения'
+            sh 'rm -rf .venv'
         }
         success {
-            echo '✅ Все тесты прошли успешно'
+            echo '✅ Все тесты прошли успешно!'
+        }
+        failure {
+            echo '❌ Ошибка: Проверь отчёт и логи'
         }
     }
 }
