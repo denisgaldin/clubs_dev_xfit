@@ -21,7 +21,7 @@ pipeline {
                     . venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
-                    pip install allure-pytest  # на всякий случай, если не в requirements.txt
+                    pip install allure-pytest
                 '''
             }
         }
@@ -39,9 +39,8 @@ pipeline {
         stage('Allure Report') {
             steps {
                 echo '📊 Генерация и публикация Allure отчёта'
-                // Убедись, что плагин Allure установлен в Jenkins и настроен
                 allure([
-                    reportDir: 'allure-results',
+                    results: [[path: 'allure-results']],
                     reportBuildPolicy: 'ALWAYS'
                 ])
             }
