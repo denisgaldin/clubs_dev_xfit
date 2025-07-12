@@ -18,7 +18,7 @@ HEADERS_CLUBS_LIST = {
 
 def test_get_clubs_list(access_token):
     headers = HEADERS_CLUBS_LIST.copy()
-    headers["Token"] = access_token
+    headers["token"] = access_token  # БЫЛО "Token", теперь правильно "token"
 
     params = {
         "lat": "55.754202886759",
@@ -32,7 +32,7 @@ def test_get_clubs_list(access_token):
     )
 
     print("📥 Ответ сервера:", response.status_code)
-    print("📄 Тело ответа:", response.text)  # Для отладки
+    print("📄 Тело ответа:", response.text)
 
     assert response.status_code == 200, f"❌ Expected 200, got {response.status_code}\n{response.text}"
 

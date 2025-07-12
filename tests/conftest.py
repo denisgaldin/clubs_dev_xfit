@@ -4,10 +4,16 @@ import requests
 import json
 from dotenv import load_dotenv
 
+# Загружаем переменные окружения из .env
 load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
+print("📍 BASE_URL =", BASE_URL)
+if not BASE_URL:
+    pytest.fail("❌ BASE_URL не установлен! Проверь .env или переменные окружения")
+
+# Заголовки по умолчанию
 HEADERS = {
     "Content-Type": "application/json",
     "User-Agent": "PostmanRuntime/7.44.1",
@@ -15,14 +21,9 @@ HEADERS = {
     "App-Version": "4.5.0"
 }
 
-SMS_TOKEN_FILE = ".sms_token.json"
-
 
 @pytest.fixture(scope="session")
 def sms_token():
-    if os.path.exists(SMS_TOKEN_FILE):
-        os.remove(SMS_TOKEN_FILE)
-
     phone_number = "9000008851"
 
     print(f"📨 Отправка SMS на номер: {phone_number}")
@@ -41,17 +42,18 @@ def sms_token():
 
     print("➡️ Ответ на отправку кода:", response.status_code, response.text)
 
+    if response.status_code != 200:
+        pytest.fail(f"❌ Ошибка при отправке кода: {response.status_code}")
+
     try:
         token = response.json().get("result", {}).get("token")
-        if token:
-            print("✅ SMS Token:", token)
-            with open(SMS_TOKEN_FILE, "w") as f:
-                json.dump({"token": token}, f)
-            return token
+        if not token:
+            raise ValueError("Token отсутствует в ответе")
+        print("✅ SMS Token получен:", token)
+        return token
     except Exception as e:
         print("⚠️ Ошибка разбора JSON:", e)
-
-    pytest.fail("❌ Не удалось извлечь SMS токен из ответа")
+        pytest.fail("❌ Не удалось извлечь SMS токен из ответа")
 
 
 @pytest.fixture(scope="session")
@@ -67,9 +69,10 @@ def access_token(sms_token):
         json=payload
     )
 
+    print("📤 Ответ авторизации:", response.status_code, response.text)
+
     if response.status_code != 200:
-        print(f"❌ Ошибка авторизации: {response.status_code} {response.text}")
-        pytest.fail(f"Ошибка авторизации: {response.status_code}")
+        pytest.fail(f"❌ Ошибка авторизации: {response.status_code}")
 
     try:
         token = response.json()["result"]["access"]["token"]
