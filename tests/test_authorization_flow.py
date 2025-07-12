@@ -22,16 +22,13 @@ def test_authorization_by_sms(sms_token):
         "token": sms_token["token"],
         "verificationCode": sms_token["code"]
     }
-
     response = requests.post(
         f"{BASE_URL}/authorization/basic",
         headers=HEADERS,
         json=payload
     )
-
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-
     data = response.json()
     access = data.get("result", {}).get("access", {})
-    assert "token" in access, "❌ Access token отсутствует в ответе"
-    print("✅ Access token успешно получен:", access["token"])
+    assert "token" in access, "Access token отсутствует в ответе"
+    print("Access token успешно получен:", access["token"])

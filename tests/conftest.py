@@ -1,12 +1,13 @@
 import pytest
 import requests
 import os
-import time
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
+PHONE_NUMBER = os.getenv("PHONE_NUMBER", "9000008851")
+SMS_CODE = os.getenv("SMS_CODE", "1234")
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -20,43 +21,30 @@ HEADERS = {
 
 @pytest.fixture(scope="session")
 def sms_token():
-    phone_number = "9000008851"
-    max_attempts = 3
-
-    for attempt in range(max_attempts):
-        print(f"📨 Отправка SMS на номер: {phone_number} (попытка {attempt + 1})")
-
-        payload = {
-            "phone": {
-                "countryCode": "7",
-                "number": phone_number
-            }
+    payload = {
+        "phone": {
+            "countryCode": "7",
+            "number": PHONE_NUMBER
         }
-
-        response = requests.post(
-            f"{BASE_URL}/authorization/sendVerificationCode",
-            headers=HEADERS,
-            json=payload
-        )
-
-        print("➡️ Ответ на отправку кода:", response.status_code, response.text)
-
-        if response.status_code == 200:
-            token = response.json()["result"]["token"]
-            code = "1234"  # тестовый код
-            print(f"✅ Получены token и verificationCode: {token}, {code}")
-            return {"token": token, "code": code}
-
-        elif (
-                response.status_code == 403 and
-                "VERIFICATION_CODE_ALREADY_SEND_PORTAL" in response.text
-        ):
-            print("⚠️ Код уже отправлен — ждём 60 секунд перед новой попыткой...")
-            time.sleep(60)
-        else:
-            pytest.fail(f"❌ Ошибка при отправке кода: {response.status_code}")
-
-    pytest.fail("❌ Не удалось отправить SMS после нескольких попыток")
+    }
+    response = requests.post(
+        f"{BASE_URL}/authorization/sendVerificationCode",
+        headers=HEADERS,
+        json=payload
+    )
+    if response.status_code == 200:
+        token = response.json()["result"]["token"]
+        code = SMS_CODE
+        print(f"Получен token: {token}, используя код: {code}")
+        return {"token": token, "code": code}
+    elif response.status_code == 403 and "VERIFICATION_CODE_ALREADY_SEND_PORTAL" in response.text:
+        print("Код уже был отправлен, используем токен из env")
+        token = os.getenv("SMS_TOKEN")
+        if not token:
+            pytest.fail("SMS_TOKEN не задан в .env при уже отправленном коде")
+        return {"token": token, "code": SMS_CODE}
+    else:
+        pytest.fail(f"Не удалось отправить verification code: {response.status_code} {response.text}")
 
 
 @pytest.fixture(scope="session")
@@ -65,24 +53,15 @@ def access_token(sms_token):
         "token": sms_token["token"],
         "verificationCode": sms_token["code"]
     }
-
     response = requests.post(
         f"{BASE_URL}/authorization/basic",
         headers=HEADERS,
         json=payload
     )
-
-    print("🔐 Ответ на авторизацию:", response.status_code, response.text)
-
     if response.status_code != 200:
-        pytest.fail(f"❌ Ошибка авторизации: {response.status_code}")
-
-    data = response.json()
-    access = data.get("result", {}).get("access", {})
-    token = access.get("token")
-
-    if not token:
-        pytest.fail("❌ Access token отсутствует в ответе")
-
-    print("✅ Access token получен:", token)
-    return token
+        pytest.fail(f"Ошибка авторизации: {response.status_code} {response.text}")
+    access_token = response.json().get("result", {}).get("access", {}).get("token")
+    if not access_token:
+        pytest.fail("Access token отсутствует в ответе")
+    print(f"Получен access_token: {access_token}")
+    return access_token
