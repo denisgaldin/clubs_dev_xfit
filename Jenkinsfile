@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        BASE_URL = credentials('xfit_base_url')  // добавь переменную в Jenkins > Credentials
+        BASE_URL = credentials('xfit_base_url')  //
     }
 
     stages {
@@ -13,17 +13,25 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Setup Virtualenv & Install Dependencies') {
             steps {
-                echo '📦 Установка зависимостей'
-                sh 'pip install -r requirements.txt'
+                echo '📦 Создание виртуального окружения и установка зависимостей'
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                echo '🚀 Запуск тестов'
-                sh 'pytest tests/ --tb=short -v'
+                echo '🚀 Запуск автотестов'
+                sh '''
+                    . venv/bin/activate
+                    pytest tests/ --tb=short -v
+                '''
             }
         }
     }
