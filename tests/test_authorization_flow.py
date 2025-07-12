@@ -1,14 +1,13 @@
-import os
 import pytest
 import requests
-import json
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
-HEADERS_BASIC_AUTH = {
+HEADERS = {
     "Content-Type": "application/json",
     "User-Agent": "PostmanRuntime/7.44.1",
     "Platform": "IOS",
@@ -20,13 +19,13 @@ HEADERS_BASIC_AUTH = {
 
 def test_authorization_by_sms(sms_token):
     payload = {
-        "token": sms_token,
-        "verificationCode": "1234"
+        "token": sms_token["token"],
+        "verificationCode": sms_token["code"]
     }
 
     response = requests.post(
         f"{BASE_URL}/authorization/basic",
-        headers=HEADERS_BASIC_AUTH,
+        headers=HEADERS,
         json=payload
     )
 

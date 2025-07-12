@@ -1,25 +1,22 @@
 import os
 import pytest
 import requests
-import json
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения из .env
 load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
-print("📍 BASE_URL =", BASE_URL)
-if not BASE_URL:
-    pytest.fail("❌ BASE_URL не установлен! Проверь .env или переменные окружения")
-
-# Заголовки по умолчанию
 HEADERS = {
     "Content-Type": "application/json",
     "User-Agent": "PostmanRuntime/7.44.1",
     "Platform": "IOS",
     "App-Version": "4.5.0"
 }
+
+print("📍 BASE_URL =", BASE_URL)
+if not BASE_URL:
+    pytest.fail("❌ BASE_URL не установлен! Проверь .env или переменные окружения")
 
 
 @pytest.fixture(scope="session")
@@ -46,21 +43,26 @@ def sms_token():
         pytest.fail(f"❌ Ошибка при отправке кода: {response.status_code}")
 
     try:
-        token = response.json().get("result", {}).get("token")
+        body = response.json().get("result", {})
+        token = body.get("token")
+        verification_code = body.get("verificationCode") or "1234"  # по умолчанию 1234
         if not token:
             raise ValueError("Token отсутствует в ответе")
-        print("✅ SMS Token получен:", token)
-        return token
+        print(f"✅ Получены token и verificationCode: {token}, {verification_code}")
+        return {
+            "token": token,
+            "code": verification_code
+        }
     except Exception as e:
         print("⚠️ Ошибка разбора JSON:", e)
-        pytest.fail("❌ Не удалось извлечь SMS токен из ответа")
+        pytest.fail("❌ Не удалось извлечь sms_token или verificationCode из ответа")
 
 
 @pytest.fixture(scope="session")
 def access_token(sms_token):
     payload = {
-        "token": sms_token,
-        "verificationCode": "1234"
+        "token": sms_token["token"],
+        "verificationCode": sms_token["code"]
     }
 
     response = requests.post(

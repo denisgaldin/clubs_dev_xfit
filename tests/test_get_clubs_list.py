@@ -1,7 +1,6 @@
 import os
 import pytest
 import requests
-import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +17,7 @@ HEADERS_CLUBS_LIST = {
 
 def test_get_clubs_list(access_token):
     headers = HEADERS_CLUBS_LIST.copy()
-    headers["token"] = access_token  # БЫЛО "Token", теперь правильно "token"
+    headers["token"] = access_token  # Используем ключ "token" в нижнем регистре
 
     params = {
         "lat": "55.754202886759",
