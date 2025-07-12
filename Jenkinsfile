@@ -13,37 +13,40 @@ pipeline {
             }
         }
 
-        stage('Setup Virtualenv & Install Dependencies') {
+        stage('Install & Run') {
             steps {
-                echo '📦 Создание виртуального окружения и установка зависимостей'
+                echo '🐍 Установка зависимостей и запуск тестов'
                 sh '''
-                    python3 -m venv venv
-                    . venv/bin/activate
+                    python3 -m venv .venv
+                    . .venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
-                    pip install allure-pytest
-                '''
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                echo '🚀 Запуск автотестов с генерацией Allure отчёта'
-                sh '''
-                    . venv/bin/activate
-                    pytest tests/ --tb=short -v --alluredir=allure-results
+                    pytest --alluredir=allure-results --maxfail=1 --disable-warnings -v
                 '''
             }
         }
 
         stage('Allure Report') {
             steps {
-                echo '📊 Генерация и публикация Allure отчёта'
+                echo '📊 Генерация Allure отчета'
                 allure([
-                    results: [[path: 'allure-results']],
-                    reportBuildPolicy: 'ALWAYS'
+                    includeProperties: false,
+                    jdk: '',
+                    reportBuildPolicy: 'ALWAYS',
+                    results: [[path: 'allure-results']]
                 ])
             }
+        }
+    }
+
+    post {
+        always {
+            echo '🧹 Очистка окружения'
+            sh 'rm -rf .venv'
+        }
+
+        failure {
+            echo '❌ Ошибка: Проверить тесты и окружение'
         }
     }
 }
