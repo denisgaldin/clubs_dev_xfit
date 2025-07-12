@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        BASE_URL = credentials('xfit_base_url')
+        BASE_URL = credentials('xfit_base_url')  // добавь переменную в Jenkins > Credentials
     }
 
     stages {
@@ -10,49 +10,21 @@ pipeline {
             steps {
                 echo '🔄 Получаем код из репозитория'
                 checkout scm
-                sh 'pwd'
-                sh 'ls -la'
             }
         }
 
-        stage('Install & Run') {
+        stage('Install Dependencies') {
             steps {
-                echo '🐍 Установка зависимостей и запуск тестов'
-                sh '''
-                    python3 -m venv .venv
-                    .venv/bin/pip install --upgrade pip
-                    .venv/bin/pip install -r requirements.txt
-                    echo "BASE_URL=$BASE_URL" > .env
-                    .venv/bin/pytest tests/ --alluredir=allure-results --maxfail=1 --disable-warnings -v
-                '''
+                echo '📦 Установка зависимостей'
+                sh 'pip install -r requirements.txt'
             }
         }
 
-        stage('Allure Report') {
+        stage('Run Tests') {
             steps {
-                echo '📊 Генерация Allure отчета'
-                allure([
-                    includeProperties: false,
-                    jdk: '',
-                    reportBuildPolicy: 'ALWAYS',
-                    results: [[path: 'allure-results']]
-                ])
+                echo '🚀 Запуск тестов'
+                sh 'pytest tests/ --tb=short -v'
             }
-        }
-    }
-
-    post {
-        always {
-            echo '🧹 Очистка окружения'
-            sh 'rm -rf .venv'
-        }
-
-        success {
-            echo '✅ Все тесты прошли успешно!'
-        }
-
-        failure {
-            echo '❌ Ошибка: Проверь отчёт и логи'
         }
     }
 }
