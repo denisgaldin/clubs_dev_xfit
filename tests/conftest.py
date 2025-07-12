@@ -1,6 +1,7 @@
 import pytest
 import requests
 import os
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,7 +20,7 @@ HEADERS = {
 }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def sms_token():
     payload = {
         "phone": {
@@ -32,11 +33,14 @@ def sms_token():
         headers=HEADERS,
         json=payload
     )
+
     if response.status_code == 200:
         token = response.json()["result"]["token"]
         code = SMS_CODE
         print(f"Получен token: {token}, используя код: {code}")
+        time.sleep(4)
         return {"token": token, "code": code}
+
     elif response.status_code == 403 and "VERIFICATION_CODE_ALREADY_SEND_PORTAL" in response.text:
         print("Код уже был отправлен, используем токен из env")
         token = os.getenv("SMS_TOKEN")
@@ -47,7 +51,7 @@ def sms_token():
         pytest.fail(f"Не удалось отправить verification code: {response.status_code} {response.text}")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def access_token(sms_token):
     payload = {
         "token": sms_token["token"],
@@ -58,8 +62,10 @@ def access_token(sms_token):
         headers=HEADERS,
         json=payload
     )
+
     if response.status_code != 200:
         pytest.fail(f"Ошибка авторизации: {response.status_code} {response.text}")
+
     access_token = response.json().get("result", {}).get("access", {}).get("token")
     if not access_token:
         pytest.fail("Access token отсутствует в ответе")

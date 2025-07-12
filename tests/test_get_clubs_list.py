@@ -2,9 +2,6 @@ import pytest
 import requests
 import json
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
@@ -16,7 +13,6 @@ HEADERS_CLUBS_LIST = {
     "Accept": "*/*",
     "Cache-Control": "no-cache",
 }
-
 
 def test_get_clubs_list(access_token):
     assert access_token, "access_token пустой или не передан"

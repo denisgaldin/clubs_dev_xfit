@@ -1,9 +1,6 @@
 import pytest
 import requests
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL")
 
@@ -15,7 +12,6 @@ HEADERS = {
     "Accept": "*/*",
     "Cache-Control": "no-cache"
 }
-
 
 def test_authorization_by_sms(sms_token):
     payload = {
